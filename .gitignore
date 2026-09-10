@@ -9,3 +9,12 @@ build/
 dist/
 .idea/
 .claude/
+.browserops/
+*.sqlite3
+audit.jsonl
+.venv/
+.uv-cache/
+.uv-tmp/
+.task-tmp/
+.pytest-tmp*/
+.browser-harness-test-home/

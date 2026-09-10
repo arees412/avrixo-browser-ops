@@ -7,6 +7,7 @@ on:
 jobs:
   publish:
     name: publish to PyPI
+    if: github.repository == 'browser-use/browser-harness'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
