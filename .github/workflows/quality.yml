@@ -1,0 +1,56 @@
+name: BrowserOps quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/avrixo-browser-ops
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install project and validation dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev,mcp]"
+      - name: Formatting
+        run: ruff format --check src/browser_harness/governance src/browser_harness/governed_mcp.py tests/unit/test_governance.py tests/e2e scripts
+      - name: Lint
+        run: ruff check src/browser_harness/governance src/browser_harness/governed_mcp.py tests/unit/test_governance.py tests/e2e scripts
+      - name: Types
+        run: mypy src/browser_harness/governance
+      - name: Unit and deterministic local E2E tests
+        run: python -m pytest tests/unit/test_governance.py tests/e2e -q
+      - name: High-confidence secret patterns
+        run: python scripts/secret_scan.py
+      - name: Documentation links and Mermaid fences
+        run: python scripts/check_docs.py
+      - name: Build distributions
+        run: python -m build
+
+  upstream-regression:
+    name: Inherited unit regression (Python 3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev,mcp]"
+      - name: Run inherited and fork-specific unit suite
+        run: python -m pytest tests/unit -q
